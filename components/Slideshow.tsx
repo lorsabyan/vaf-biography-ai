@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ChevronLeft, ChevronRight, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MapView } from "./MapView";
@@ -9,8 +10,13 @@ import { terms } from "@/lib/terms";
 export function Slideshow() {
   const { slides, currentSlideIndex, nextSlide, previousSlide, setCurrentView } =
     useAppStore();
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   const currentSlide = slides[currentSlideIndex];
+
+  const handleImageError = (imageUrl: string) => {
+    setImageErrors((prev) => new Set(prev).add(imageUrl));
+  };
 
   if (!currentSlide) {
     return (
@@ -68,12 +74,13 @@ export function Slideshow() {
 
               {/* Image or Map */}
               <div className="space-y-4">
-                {currentSlide.imageUrl && (
+                {currentSlide.imageUrl && !imageErrors.has(currentSlide.imageUrl) && (
                   <div className="rounded-lg overflow-hidden shadow-lg">
                     <img
                       src={currentSlide.imageUrl}
                       alt={currentSlide.title}
                       className="w-full h-64 object-cover"
+                      onError={() => handleImageError(currentSlide.imageUrl!)}
                     />
                   </div>
                 )}

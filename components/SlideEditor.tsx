@@ -31,6 +31,7 @@ export function SlideEditor({ slide, isOpen, onClose }: SlideEditorProps) {
   const [title, setTitle] = useState(slide.title);
   const [content, setContent] = useState(slide.content);
   const [images, setImages] = useState<ImageResult[]>([]);
+  const [validImages, setValidImages] = useState<Set<string>>(new Set());
   const [selectedImage, setSelectedImage] = useState(slide.imageUrl || "");
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const { updateSlide } = useAppStore();
@@ -46,6 +47,7 @@ export function SlideEditor({ slide, isOpen, onClose }: SlideEditorProps) {
     if (!slide.imageSearchTerm) return;
     
     setIsLoadingImages(true);
+    setValidImages(new Set());
     try {
       const response = await fetch("/api/images", {
         method: "POST",
@@ -59,12 +61,46 @@ export function SlideEditor({ slide, isOpen, onClose }: SlideEditorProps) {
       
       const data = await response.json();
       setImages(data.images || []);
+      
+      // Validate all images in parallel
+      if (data.images && data.images.length > 0) {
+        validateImages(data.images);
+      }
     } catch (error) {
       console.error("Error loading images:", error);
       setImages([]);
     } finally {
       setIsLoadingImages(false);
     }
+  };
+
+  const validateImages = async (imagesToValidate: ImageResult[]) => {
+    const validationPromises = imagesToValidate.map(async (image) => {
+      return new Promise<{ url: string; isValid: boolean }>((resolve) => {
+        const img = new Image();
+        const timeout = setTimeout(() => {
+          resolve({ url: image.url, isValid: false });
+        }, 5000); // 5 second timeout
+
+        img.onload = () => {
+          clearTimeout(timeout);
+          resolve({ url: image.url, isValid: true });
+        };
+
+        img.onerror = () => {
+          clearTimeout(timeout);
+          resolve({ url: image.url, isValid: false });
+        };
+
+        img.src = image.url;
+      });
+    });
+
+    const results = await Promise.all(validationPromises);
+    const validUrls = new Set(
+      results.filter((r) => r.isValid).map((r) => r.url)
+    );
+    setValidImages(validUrls);
   };
 
   const handleSave = () => {
@@ -113,28 +149,35 @@ export function SlideEditor({ slide, isOpen, onClose }: SlideEditorProps) {
               </div>
             ) : images.length > 0 ? (
               <div className="grid grid-cols-3 gap-4">
-                {images.map((image, index) => (
-                  <div
-                    key={index}
-                    onClick={() => setSelectedImage(image.url)}
-                    className={`relative cursor-pointer rounded-lg overflow-hidden border-4 transition-all ${
-                      selectedImage === image.url
-                        ? "border-blue-600 shadow-lg"
-                        : "border-transparent hover:border-blue-300"
-                    }`}
-                  >
-                    <img
-                      src={image.url}
-                      alt={image.title}
-                      className="w-full h-32 object-cover"
-                    />
-                    {selectedImage === image.url && (
-                      <div className="absolute inset-0 bg-blue-600 bg-opacity-20 flex items-center justify-center">
-                        <ImageIcon className="w-8 h-8 text-white" />
-                      </div>
-                    )}
-                  </div>
-                ))}
+                {images
+                  .filter((image) => validImages.has(image.url))
+                  .map((image, index) => (
+                    <div
+                      key={index}
+                      onClick={() => setSelectedImage(image.url)}
+                      className={`relative cursor-pointer rounded-lg overflow-hidden border-4 transition-all ${
+                        selectedImage === image.url
+                          ? "border-blue-600 shadow-lg"
+                          : "border-transparent hover:border-blue-300"
+                      }`}
+                    >
+                      <img
+                        src={image.url}
+                        alt={image.title}
+                        className="w-full h-32 object-cover"
+                      />
+                      {selectedImage === image.url && (
+                        <div className="absolute inset-0 bg-blue-600 bg-opacity-20 flex items-center justify-center">
+                          <ImageIcon className="w-8 h-8 text-white" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            ) : validImages.size === 0 && images.length > 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-2" />
+                <p>{terms.loadingImages}</p>
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">

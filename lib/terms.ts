@@ -19,6 +19,7 @@ export const terms = {
   slideContent: "Բովանդակություն",
   selectImage: "Ընտրել Նկար",
   noImages: "Նկարներ չկան",
+  loadingImages: "Ստուգում է նկարները...",
   saveChanges: "Պահպանել",
   cancel: "Չեղարկել",
   
