@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
     // Use Gemini 2.5 Pro - the most capable model with advanced reasoning
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.5-pro',
     });
 
     if (action === 'chat') {

@@ -26,14 +26,16 @@ A Next.js web application that allows students (ages 10-16) to build slideshow p
 
 ## Technology Stack
 
-- **Framework**: Next.js 14 with App Router
-- **Language**: TypeScript
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript 5.9
 - **UI Components**: Shadcn/ui
-- **Styling**: Tailwind CSS
-- **State Management**: Zustand
-- **Graph Visualization**: ReactFlow
-- **Mapping**: Maplibre.js
-- **AI & Data APIs**: Google Gemini API, Serper API
+- **Styling**: Tailwind CSS 4.1
+- **State Management**: Zustand 5.0
+- **Graph Visualization**: ReactFlow 11.11
+- **Mapping**: Maplibre.js 5.8
+- **AI & Data APIs**: 
+  - Google Gemini API 2.5 Pro
+  - Serper API
 
 ## Setup Instructions
 
