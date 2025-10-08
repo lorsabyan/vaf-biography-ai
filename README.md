@@ -1,6 +1,19 @@
-# AI-Powered Biography Presentation Builder
+# 🎓 AI-Powered Biography Presentation Builder
+
+<div align="center">
+
+![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Gemini AI](https://img.shields.io/badge/Gemini_AI-8E75B2?style=for-the-badge&logo=google&logoColor=white)
 
 A Next.js web application that allows students (ages 10-16) to build slideshow presentations about a person's biography using AI.
+
+[Demo](#) · [Report Bug](https://github.com/lorsabyan/vaf-biography-ai/issues) · [Request Feature](https://github.com/lorsabyan/vaf-biography-ai/issues)
+
+</div>
+
+---
 
 ## Features
 
