@@ -11,6 +11,7 @@ import ReactFlow, {
   useEdgesState,
   NodeProps,
   Position,
+  Handle,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { Button } from "@/components/ui/button";
@@ -22,10 +23,12 @@ import { terms } from "@/lib/terms";
 function SlideNode({ data }: NodeProps) {
   return (
     <div className="px-6 py-4 shadow-lg rounded-lg bg-white border-2 border-blue-500 min-w-[200px] cursor-pointer hover:shadow-xl transition-shadow">
+      <Handle type="target" position={Position.Top} />
       <div className="font-bold text-sm text-blue-600 mb-2">
         {terms.slideNode} {data.index + 1}
       </div>
       <div className="text-base font-semibold">{data.label}</div>
+      <Handle type="source" position={Position.Bottom} />
     </div>
   );
 }
