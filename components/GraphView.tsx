@@ -10,6 +10,7 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   NodeProps,
+  Position,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { Button } from "@/components/ui/button";
@@ -40,17 +41,19 @@ export function GraphView() {
 
   // Create nodes from slides
   const initialNodes: Node[] = slides.map((slide, index) => ({
-    id: slide.id,
+    id: String(slide.id),
     type: "slideNode",
     position: { x: 250, y: index * 150 },
     data: { label: slide.title, index },
+    sourcePosition: Position.Bottom,
+    targetPosition: Position.Top,
   }));
 
   // Create edges between sequential slides
   const initialEdges: Edge[] = slides.slice(0, -1).map((slide, index) => ({
     id: `e${slide.id}-${slides[index + 1].id}`,
-    source: slide.id,
-    target: slides[index + 1].id,
+    source: String(slide.id),
+    target: String(slides[index + 1].id),
     animated: true,
     style: { stroke: "#3b82f6", strokeWidth: 2 },
   }));
