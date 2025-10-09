@@ -26,10 +26,13 @@ export function ChatInterface() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onFinish: async (message: any) => {
       // Check if the conversation is complete and we should generate slides
-      const messageText = message.parts
-        .filter((part: { type: string }) => part.type === 'text')
-        .map((part: { text: string }) => part.text)
-        .join('');
+      // Handle both parts-based and content-based message structures
+      const messageText = message.parts 
+        ? message.parts
+            .filter((part: { type: string }) => part.type === 'text')
+            .map((part: { text: string }) => part.text)
+            .join('')
+        : message.content || '';
         
       if (messageText.toLowerCase().includes('slides') || 
           messageText.toLowerCase().includes('ներկայացում')) {
@@ -39,9 +42,11 @@ export function ChatInterface() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const allMessages = messages.map((m: any) => {
             const text = m.parts
-              .filter((part: { type: string }) => part.type === 'text')
-              .map((part: { text: string }) => part.text)
-              .join('');
+              ? m.parts
+                  .filter((part: { type: string }) => part.type === 'text')
+                  .map((part: { text: string }) => part.text)
+                  .join('')
+              : m.content || '';
             return { role: m.role, content: text };
           });
           
@@ -122,9 +127,11 @@ export function ChatInterface() {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 messages.map((message: any) => {
                   const messageText = message.parts
-                    .filter((part: { type: string }) => part.type === 'text')
-                    .map((part: { text: string }) => part.text)
-                    .join('');
+                    ? message.parts
+                        .filter((part: { type: string }) => part.type === 'text')
+                        .map((part: { text: string }) => part.text)
+                        .join('')
+                    : message.content || '';
                     
                   return (
                     <div
