@@ -1,6 +1,7 @@
 "use client";
 
-import { useChat } from "ai/react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { Send, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,29 +11,45 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAppStore } from "@/lib/store";
 import { terms } from "@/lib/terms";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function ChatInterface() {
   const { setSlides, setCurrentView } = useAppStore();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [input, setInput] = useState("");
   
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
-    api: '/api/chat',
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+    }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onFinish: async (message: any) => {
       // Check if the conversation is complete and we should generate slides
-      if (message.content.toLowerCase().includes('slides') || 
-          message.content.toLowerCase().includes('ներկայացում')) {
+      const messageText = message.parts
+        .filter((part: { type: string }) => part.type === 'text')
+        .map((part: { text: string }) => part.text)
+        .join('');
+        
+      if (messageText.toLowerCase().includes('slides') || 
+          messageText.toLowerCase().includes('ներկայացում')) {
         // Parse slides from the response if needed
         // For now, we'll trigger slide generation through the old API
         try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const allMessages = messages.map((m: any) => {
+            const text = m.parts
+              .filter((part: { type: string }) => part.type === 'text')
+              .map((part: { text: string }) => part.text)
+              .join('');
+            return { role: m.role, content: text };
+          });
+          
           const response = await fetch("/api/gemini", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              messages: messages.map((m: any) => ({ role: m.role, content: m.content })),
+              messages: allMessages,
               action: "generate_slides",
             }),
           });
@@ -49,12 +66,22 @@ export function ChatInterface() {
     },
   });
 
+  const isLoading = status === 'submitted' || status === 'streaming';
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim() && status === 'ready') {
+      sendMessage({ text: input });
+      setInput('');
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -93,26 +120,33 @@ export function ChatInterface() {
                 </div>
               ) : (
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                messages.map((message: any) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${
-                      message.role === "user" ? "justify-end" : "justify-start"
-                    }`}
-                  >
+                messages.map((message: any) => {
+                  const messageText = message.parts
+                    .filter((part: { type: string }) => part.type === 'text')
+                    .map((part: { text: string }) => part.text)
+                    .join('');
+                    
+                  return (
                     <div
-                      className={`max-w-[85%] rounded-2xl px-5 py-3 shadow-md transition-all hover:shadow-lg ${
-                        message.role === "user"
-                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
-                          : "bg-white text-slate-900 border border-slate-200"
+                      key={message.id}
+                      className={`flex ${
+                        message.role === "user" ? "justify-end" : "justify-start"
                       }`}
                     >
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                        {message.content}
-                      </p>
+                      <div
+                        className={`max-w-[85%] rounded-2xl px-5 py-3 shadow-md transition-all hover:shadow-lg ${
+                          message.role === "user"
+                            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+                            : "bg-white text-slate-900 border border-slate-200"
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                          {messageText}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
               {isLoading && (
                 <div className="flex justify-start">
@@ -135,7 +169,7 @@ export function ChatInterface() {
           <form onSubmit={handleSubmit} className="flex gap-2">
             <Input
               value={input}
-              onChange={handleInputChange}
+              onChange={(e) => setInput(e.target.value)}
               placeholder={terms.chatPlaceholder}
               disabled={isLoading}
               className="flex-1 h-12 text-base border-slate-300 focus-visible:ring-blue-600"
@@ -158,3 +192,4 @@ export function ChatInterface() {
     </div>
   );
 }
+
