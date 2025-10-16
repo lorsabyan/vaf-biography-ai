@@ -225,14 +225,23 @@ export function GraphView() {
     targetPosition: Position.Left,
   }));
 
-  // Create edges between sequential slides - horizontal flow
+  // Create edges between sequential slides - horizontal flow with arrows
   const initialEdges: Edge[] = slides.slice(0, -1).map((slide, index) => ({
     id: `e${slide.id}-${slides[index + 1].id}`,
     source: String(slide.id),
     target: String(slides[index + 1].id),
     animated: true,
-    type: 'smoothstep',
-    style: { stroke: "#3b82f6", strokeWidth: 3 },
+    type: 'straight',
+    style: { 
+      stroke: "#3b82f6", 
+      strokeWidth: 4,
+    },
+    markerEnd: {
+      type: 'arrowclosed',
+      color: '#3b82f6',
+      width: 20,
+      height: 20,
+    },
   }));
 
   const [nodes, , onNodesChange] = useNodesState(initialNodes);
