@@ -1,6 +1,7 @@
 "use client";
 
 import { Send, Loader2, Sparkles } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -116,9 +117,15 @@ export function ChatInterface() {
                           : "bg-white text-slate-900 border border-slate-200"
                       }`}
                     >
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                        {message.content}
-                      </p>
+                      {message.role === "user" ? (
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                          {message.content}
+                        </p>
+                      ) : (
+                        <div className="text-sm leading-relaxed prose prose-sm max-w-none">
+                          <ReactMarkdown>{message.content}</ReactMarkdown>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))
