@@ -1,7 +1,5 @@
 "use client";
 
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 import { Send, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,69 +7,57 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAppStore } from "@/lib/store";
+import { useAppStore, Message } from "@/lib/store";
 import { terms } from "@/lib/terms";
 import { useEffect, useRef, useState } from "react";
 
 export function ChatInterface() {
-  const { setSlides, setCurrentView } = useAppStore();
+  const { setSlides, setCurrentView, messages, addMessage, clearMessages } = useAppStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState("");
-  
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({
-      api: '/api/chat',
-    }),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onFinish: async (message: any) => {
-      // Check if the conversation is complete and we should generate slides
-      // Handle both parts-based and content-based message structures
-      const messageText = message.parts 
-        ? message.parts
-            .filter((part: { type: string }) => part.type === 'text')
-            .map((part: { text: string }) => part.text)
-            .join('')
-        : message.content || '';
-        
-      if (messageText.toLowerCase().includes('slides') || 
-          messageText.toLowerCase().includes('ներկայացում')) {
-        // Parse slides from the response if needed
-        // For now, we'll trigger slide generation through the old API
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const allMessages = messages.map((m: any) => {
-            const text = m.parts
-              ? m.parts
-                  .filter((part: { type: string }) => part.type === 'text')
-                  .map((part: { text: string }) => part.text)
-                  .join('')
-              : m.content || '';
-            return { role: m.role, content: text };
-          });
-          
-          const response = await fetch("/api/gemini", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              messages: allMessages,
-              action: "generate_slides",
-            }),
-          });
-          
-          const data = await response.json();
-          if (data.slides) {
-            setSlides(data.slides);
-            setTimeout(() => setCurrentView("graph"), 1000);
-          }
-        } catch (error) {
-          console.error("Error generating slides:", error);
-        }
-      }
-    },
-  });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const isLoading = status === 'submitted' || status === 'streaming';
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim() && !isLoading) {
+      const userMessage: Message = { role: 'user', content: input };
+      addMessage(userMessage);
+      setInput('');
+      setIsLoading(true);
+
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: [...messages, userMessage] }),
+        });
+
+        const data = await response.json();
+        
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        const assistantMessage: Message = { role: 'assistant', content: data.message };
+        addMessage(assistantMessage);
+
+        // Check if slides were generated
+        if (data.slides && data.complete) {
+          setSlides(data.slides);
+          setTimeout(() => setCurrentView("graph"), 1000);
+        }
+      } catch (error) {
+        console.error('Chat error:', error);
+        const errorMessage: Message = { 
+          role: 'assistant', 
+          content: 'Ներողություն, տեխնիկական խնդիր է տեղի ունեցել: Խնդրում եմ փորձել կրկին:' 
+        };
+        addMessage(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -79,14 +65,6 @@ export function ChatInterface() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (input.trim() && status === 'ready') {
-      sendMessage({ text: input });
-      setInput('');
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -124,36 +102,26 @@ export function ChatInterface() {
                   </div>
                 </div>
               ) : (
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                messages.map((message: any) => {
-                  const messageText = message.parts
-                    ? message.parts
-                        .filter((part: { type: string }) => part.type === 'text')
-                        .map((part: { text: string }) => part.text)
-                        .join('')
-                    : message.content || '';
-                    
-                  return (
+                messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`flex ${
+                      message.role === "user" ? "justify-end" : "justify-start"
+                    }`}
+                  >
                     <div
-                      key={message.id}
-                      className={`flex ${
-                        message.role === "user" ? "justify-end" : "justify-start"
+                      className={`max-w-[85%] rounded-2xl px-5 py-3 shadow-md transition-all hover:shadow-lg ${
+                        message.role === "user"
+                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+                          : "bg-white text-slate-900 border border-slate-200"
                       }`}
                     >
-                      <div
-                        className={`max-w-[85%] rounded-2xl px-5 py-3 shadow-md transition-all hover:shadow-lg ${
-                          message.role === "user"
-                            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
-                            : "bg-white text-slate-900 border border-slate-200"
-                        }`}
-                      >
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                          {messageText}
-                        </p>
-                      </div>
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                        {message.content}
+                      </p>
                     </div>
-                  );
-                })
+                  </div>
+                ))
               )}
               {isLoading && (
                 <div className="flex justify-start">

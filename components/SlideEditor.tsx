@@ -19,6 +19,7 @@ interface SlideEditorProps {
   slide: SlideData;
   isOpen: boolean;
   onClose: () => void;
+  imageOnly?: boolean;
 }
 
 interface ImageResult {
@@ -27,7 +28,7 @@ interface ImageResult {
   source: string;
 }
 
-export function SlideEditor({ slide, isOpen, onClose }: SlideEditorProps) {
+export function SlideEditor({ slide, isOpen, onClose, imageOnly = false }: SlideEditorProps) {
   const [title, setTitle] = useState(slide.title);
   const [content, setContent] = useState(slide.content);
   const [images, setImages] = useState<ImageResult[]>([]);
@@ -104,11 +105,19 @@ export function SlideEditor({ slide, isOpen, onClose }: SlideEditorProps) {
   };
 
   const handleSave = () => {
-    updateSlide(slide.id, {
-      title,
-      content,
-      imageUrl: selectedImage,
-    });
+    if (imageOnly) {
+      // Only save image selection
+      updateSlide(slide.id, {
+        imageUrl: selectedImage,
+      });
+    } else {
+      // Save all fields
+      updateSlide(slide.id, {
+        title,
+        content,
+        imageUrl: selectedImage,
+      });
+    }
     onClose();
   };
 
@@ -116,29 +125,35 @@ export function SlideEditor({ slide, isOpen, onClose }: SlideEditorProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">{terms.editSlide}</DialogTitle>
+          <DialogTitle className="text-2xl">
+            {imageOnly ? "Select Image" : terms.editSlide}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Title Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{terms.slideTitle}</label>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="text-lg"
-            />
-          </div>
+          {/* Title Input - Only show if not imageOnly */}
+          {!imageOnly && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{terms.slideTitle}</label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="text-lg"
+              />
+            </div>
+          )}
 
-          {/* Content Textarea */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{terms.slideContent}</label>
-            <Textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="min-h-[150px] text-base"
-            />
-          </div>
+          {/* Content Textarea - Only show if not imageOnly */}
+          {!imageOnly && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{terms.slideContent}</label>
+              <Textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="min-h-[150px] text-base"
+              />
+            </div>
+          )}
 
           {/* Image Selection */}
           <div className="space-y-2">
